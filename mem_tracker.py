@@ -76,6 +76,7 @@ class MemoryTrackingMode(TorchDispatchMode):
         self._optimizer_hook_handle: Union[RemovableHandle, None] = None
         self.WINFO = WeakIdKeyDictionary()
 
+
     def _update_stats(self):
         curr_use: int = 0
         for st, winfo in self.WINFO.items():
@@ -186,7 +187,7 @@ class MemoryTrackingMode(TorchDispatchMode):
 
         def _grad_hook(param: nn.Parameter):
             if param.grad is not None:
-                st = param.grad.untyped_storage()
+                st: torch.UntypedStorage = param.grad.untyped_storage()
                 winfo = self.WINFO.get(st, None)
                 assert winfo is not None, "grad tensor not found in WINFO"
                 winfo.reftype = _RefType.gradient
@@ -282,7 +283,7 @@ def test():
 
     model = DummyModel(layers, dim)
     optim = torch.optim.Adam(model.parameters(), fused=True)
-    mem_tracker = MemoryTrackingMode(model, optim, display_modulewise_stats=True, units="MB")
+    mem_tracker = MemoryTrackingMode(model, optim, depth=2, display_modulewise_stats=True, units="MB")
     with mem_tracker as mt:
         input_batch = torch.randn(batch_size, dim)
         print("After Model and mini-batch init:")
